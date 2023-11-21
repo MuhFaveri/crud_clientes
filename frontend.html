@@ -64,10 +64,10 @@
 <td>
 <button class="btn btn-warning btn-sm"
 
-onclick="editProduct(${cliente.id})">Alterar</button>
+onclick="editCliente(${cliente.id})">Alterar</button>
 
 <button class="btn btn-danger btn-sm"
-onclick="deleteProduct(${cliente.id})">Remover</button>
+onclick="deleteCliente(${cliente.id})">Remover</button>
 
 </td>
 `;
@@ -75,34 +75,53 @@ onclick="deleteProduct(${cliente.id})">Remover</button>
             });
         }
 
+        // Carrega clientes do servidor ao carregar a página
+       async function consultarBanco () {
+        await fetch("http://localhost:3000/clientes")
+            .then((response) => response.json())
+            .then((data) => {
+                clientes = data;
+            })
+            .catch((error) => console.error("Error:", error));
+            displayClientes();
+        }
+        
         // Função para carregar um cliente no formulário para edição
         function editCliente(id) {
             clienteAtual = id;
             const cliente = clientes.find((p) => p.id === id);
-            document.getElementById("id").value = cliente.id;
-            document.getElementById("nome").value = cliente.nome;
-            document.getElementById("contato").value = cliente.contato;
-            document.getElementById("endereco").value = cliente.endereco;
+            document.getElementById("id").value = cliente.id || "";
+            document.getElementById("nome").value = cliente.nome || "";
+            document.getElementById("contato").value = cliente.contato || "";
+            document.getElementById("endereco").value = cliente.endereco || "";
             // Mostra o botão cancelar durante a edição
             document.getElementById("cancelBtn").style.display = "inline-block";
         }
 
-        // Função para remover cliente do servidor e atualizar a lista
-        function deleteProduct(id) {
+        function reset() {
+                document.getElementById("id").value = "";
+                document.getElementById("nome").value = "";
+                document.getElementById("contato").value = "";
+                document.getElementById("endereco").value = "";
+            }
+
+            // Função para remover cliente do servidor e atualizar a lista
+        function deleteCliente(id) {
             fetch("http://localhost:3000/clientes/" + id, {
                 method: "DELETE",
             })
                 .then(() => {
-                    clientes = clientes.filter((p) => p.id !== id);
 
-                    displayProducts();
+                    reset();
+                    consultarBanco();
                 })
                 .catch((error) => console.error("Error:", error));
         }
 
+
         // Evento para lidar com o envio do formulário
         document
-            .getElementById("clienteForm")
+            .getElementById("productForm")
             .addEventListener("submit", function (event) {
                 event.preventDefault();
 
@@ -120,20 +139,22 @@ onclick="deleteProduct(${cliente.id})">Remover</button>
                         headers: {
                             "Content-Type": "application/json",
                         },
-                        body: JSON.stringify(clientes),
+                        body: JSON.stringify(cliente),
                     })
                         .then((response) => response.json())
                         .then((data) => {
                             const index = clientes.findIndex((p) => p.id === clienteAtual);
                             clientes[index] = data;
-                            displayClientes();
+                            consultarBanco();
+
                             // Limpa o formulário e reseta o cliente em edição
-                            document.getElementById("clienteForm").reset();
+                            document.getElementById("clienteForm");
                             clienteAtual = null;
                             document.getElementById("cancelBtn").style.display = "none";
                         })
                         .catch((error) => console.error("Error:", error));
                 } else {
+
                     // Se for um novo cliente
                     fetch("http://localhost:3000/clientes", {
                         method: "POST",
@@ -145,30 +166,25 @@ onclick="deleteProduct(${cliente.id})">Remover</button>
                         .then((response) => response.json())
                         .then((data) => {
                             clientes.push(data);
-                            displayProducts();
-                            document.getElementById("clienteForm").reset();
+                            consultarBanco();
+                            document.getElementById("clienteForm");
                         })
                         .catch((error) => console.error("Error:", error));
 
                 }
             });
-        // Cancela a edição e limpa o formulário
-        document
-            .getElementById("cancelBtn")
-            .addEventListener("click", function () {
-                clienteAtual = null;
-                document.getElementById("clienteForm").reset();
-                this.style.display = "none";
-            });
 
-        // Carrega clientes do servidor ao carregar a página
-        fetch("http://localhost:3000/clientes")
-            .then((response) => response.json())
-            .then((data) => {
-                clientes = data;
-                displayClientes();
-            })
-            .catch((error) => console.error("Error:", error));
+        // Cancela a edição e limpa o formulário
+    document
+        .getElementById("cancelBtn")
+        .addEventListener("click", function () {
+            clienteAtual = null;
+            reset(); // Chamando a função reset() para limpar os campos
+            this.style.display = "none";
+        });
+
+
+        consultarBanco();
 
     </script>
     <!-- Bibliotecas JS auxiliares (Bootstrap requer jQuery e Popper.js) -->
